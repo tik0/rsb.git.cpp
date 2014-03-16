@@ -1,6 +1,7 @@
 # Create and install plugin library.
 set(PLUGIN_NAME rsbintrospection)
 add_library(${PLUGIN_NAME} SHARED "Plugin.cpp"
+                                  "Model.cpp"
                                   "IntrospectionSender.cpp")
 
 target_link_libraries(${PLUGIN_NAME} ${RSC_LIBRARIES}
