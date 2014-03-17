@@ -28,8 +28,12 @@
 
 #include <boost/format.hpp>
 
-#include <rsb/protocol/operatingsystem/Process.pb.h>
+#include <rsb/protocol/introspection/Hello.pb.h>
+#include <rsb/protocol/introspection/Bye.pb.h>
 
+#include "../EventId.h"
+#include "../MetaData.h"
+#include "../Handler.h"
 #include "../Factory.h"
 
 #include "Model.h"
@@ -39,10 +43,65 @@ namespace introspection {
 
 // IntrospectionSender
 
+struct QueryHandler : public Handler {
+    QueryHandler(IntrospectionSender& sender)
+        : sender(sender) {
+    }
+
+    void handle(EventPtr query) {
+        RSCDEBUG(this->sender.logger, "Processing introspection query " << query);
+        if (query->getType() == rsc::runtime::typeName<void>()) {
+            if (query->getMethod() == "SURVEY") { // TODO check scope
+                for (IntrospectionSender::ParticipantList::const_iterator it
+                         = this->sender.participants.begin();
+                     it != this->sender.participants.end();
+                     ++it) {
+                    // TODO this->sender.sendHello(*it, query);
+                }
+            } else if (query->getMethod() == "REQUEST") {
+                std::string idString
+                    = (query->getScope().getComponents()
+                       [query->getScope().getComponents().size() - 1]);
+                rsc::misc::UUID id(idString);
+                for (IntrospectionSender::ParticipantList::const_iterator it
+                         = this->sender.participants.begin();
+                     it != this->sender.participants.end(); ++it) {
+                    if (it->getId() == id) {
+                        // TODO this->sender.sendHello(*it, query);
+                        break;
+                    }
+                }
+            } else {
+                RSCWARN(this->sender.logger, "Introspection query not understood: " << query);
+            }
+        } else if ((query->getType() == rsc::runtime::typeName<std::string>())
+                   && (*boost::static_pointer_cast<std::string>(query->getData())
+                       == "ping")) {
+            for (IntrospectionSender::ParticipantList::const_iterator it
+                     = this->sender.participants.begin();
+                 it != this->sender.participants.end();
+                 ++it) {
+                sendPong(*it, query);
+            }
+        }
+    }
+
+    void sendPong(const ParticipantInfo& participant, EventPtr /*query*/) {
+        EventPtr pongEvent(new Event());
+        pongEvent->setScope(this->sender.informer->getScope()->concat(participant.getId().getIdAsString()));
+        pongEvent->setType(rsc::runtime::typeName<std::string>());
+        pongEvent->setData(boost::shared_ptr<std::string>(new std::string("pong")));
+        this->sender.informer->publish(pongEvent);
+    }
+
+    IntrospectionSender& sender;
+};
+
 IntrospectionSender::IntrospectionSender()
     : logger(rsc::logging::Logger::getLogger("rsb.introspection.IntrospectionSender")),
       listener(getFactory().createListener("/__rsb/introspection/participants/")),
       informer(getFactory().createInformerBase("/__rsb/introspection/participants/")) {
+    listener->addHandler(HandlerPtr(new QueryHandler(*this)));
 }
 
 void IntrospectionSender::addParticipant(ParticipantPtr participant) {
@@ -72,7 +131,6 @@ void IntrospectionSender::addParticipant(ParticipantPtr participant) {
     // Add process information.
     rsb::protocol::operatingsystem::Process* process
         = hello->mutable_process();
-
     process->set_id(boost::lexical_cast<std::string>(this->process.getPid()));
     process->set_program_name(this->process.getProgramName());
     std::vector<std::string> arguments = this->process.getArguments();

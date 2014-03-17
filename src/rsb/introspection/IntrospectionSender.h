@@ -33,8 +33,6 @@
 
 #include <rsc/logging/Logger.h>
 
-#include <rsb/protocol/introspection/Hello.pb.h>
-
 #include "../Participant.h"
 #include "../Listener.h"
 #include "../Informer.h"
@@ -47,6 +45,7 @@ namespace rsb {
 namespace introspection {
 
 class IntrospectionSender {
+friend class QueryHandler;
 public:
     IntrospectionSender();
 
