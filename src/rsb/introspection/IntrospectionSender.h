@@ -65,6 +65,11 @@ private:
     InformerBasePtr               informer;
 
     rsb::patterns::LocalServerPtr server;
+
+    void sendHello(const ParticipantInfo& participant,
+                   EventPtr               query = EventPtr());
+
+    void sendBye(const ParticipantInfo& participant);
 };
 
 typedef boost::shared_ptr<IntrospectionSender> IntrospectionSenderPtr;
