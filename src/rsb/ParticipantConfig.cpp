@@ -264,6 +264,15 @@ const ParticipantConfig::EventProcessingStrategy& ParticipantConfig::getEventSen
     return this->eventSendingStrategy;
 }
 
+bool ParticipantConfig::getIntrospection() const {
+    return this->introspection;
+}
+
+void ParticipantConfig::setIntrospection(bool newValue) {
+    this->introspection = newValue;
+}
+
+
 rsc::runtime::Properties ParticipantConfig::getOptions() const {
     return options;
 }
@@ -348,7 +357,17 @@ void ParticipantConfig::handleOption(const vector<string>& key,
             copy(key.begin() + 2, key.end(), back_inserter(subKey));
             strategy->handleOption(subKey, value);
         }
-        // Transports
+
+    // Introspection
+    } else if (key[0] == "introspection") {
+        if ((key.size() == 2) && (key[1] == "enabled")) {
+            this->introspection = lexical_cast<bool>(value);
+        } else {
+            throw invalid_argument(str(format("`%2%' is not a valid sub-key of `%1%'.")
+                                       % key[0] % key[1]));
+        }
+
+    // Transports
     } else if (key[0] == "transport") {
         if (key.size() < 3) {
             throw invalid_argument(

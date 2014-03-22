@@ -317,6 +317,10 @@ public:
 
     const EventProcessingStrategy& getEventSendingStrategy() const;
 
+    bool getIntrospection() const;
+
+    void setIntrospection(bool newValue);
+
     /**
      * Returns additional options besides the transport-specific ones.
      *
@@ -346,6 +350,7 @@ private:
     std::map<std::string, Transport> transports;
     EventProcessingStrategy          eventReceivingStrategy;
     EventProcessingStrategy          eventSendingStrategy;
+    bool                             introspection;
     rsc::runtime::Properties         options;
 
     void handleOption(const std::vector<std::string>& key,
