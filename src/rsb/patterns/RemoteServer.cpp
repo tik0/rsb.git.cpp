@@ -159,7 +159,13 @@ RemoteServer::RemoteMethodPtr RemoteServer::getMethod(const string& name) {
                               name,
                               this->listenerConfig,
                               this->informerConfig));
+
+        method->setSignalParticipantDestroyed
+            (&getFactory().getSignalParticipantDestroyed()); // TODO asking for trouble
+        getFactory().getSignalParticipantCreated()(method);
+
         method->activate();
+
         this->methods[name] = method;
     }
 

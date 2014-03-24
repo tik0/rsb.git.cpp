@@ -32,12 +32,18 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <boost/signal.hpp>
+
 #include <rsc/misc/UUID.h>
 #include <rsc/runtime/Printable.h>
 
 #include "rsb/rsbexports.h"
 
 namespace rsb {
+
+class Participant;
+
+typedef boost::signal1<void, Participant*> SignalParticipantDestroyed;
 
 class ParticipantConfig;
 class Scope;
@@ -91,6 +97,8 @@ public:
      * @return copy of this participant's config
      */
     ParticipantConfig getConfig() const;
+
+    void setSignalParticipantDestroyed(SignalParticipantDestroyed* signal);
 
 protected:
 

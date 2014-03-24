@@ -161,7 +161,13 @@ void LocalServer::registerMethod(const std::string& name, CallbackPtr callback) 
                          this->listenerConfig,
                          this->informerConfig,
                          callback));
+
+    method->setSignalParticipantDestroyed
+        (&getFactory().getSignalParticipantDestroyed()); // TODO asking for trouble
+    getFactory().getSignalParticipantCreated()(method);
+
     method->activate();
+
     this->methods[name] = method;
 
 }

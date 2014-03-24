@@ -3,7 +3,7 @@
  * This file is a part of the RSB project.
  *
  * Copyright (C) 2011 by Johannes Wienke <jwienke at techfak dot uni-bielefeld dot de>
- * Copyright (C) 2012, 2013 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
+ * Copyright (C) 2012, 2013, 2014 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
  *
  * This file may be licensed under the terms of the
  * GNU Lesser General Public License Version 3 (the ``LGPL''),
@@ -255,28 +255,51 @@ Factory::Factory() :
 Factory::~Factory() {
 }
 
+SignalParticipantCreated& Factory::getSignalParticipantCreated() {
+    return this->signalParticipantCreated;
+}
+
+SignalParticipantDestroyed& Factory::getSignalParticipantDestroyed() {
+    return this->signalParticipantDestroyed;
+}
+
 InformerBasePtr Factory::createInformerBase(const Scope&             scope,
                                             const string&            dataType,
                                             const ParticipantConfig& config) {
-    return InformerBasePtr(new InformerBase(createOutConnectors(config), scope, config, dataType));
+    InformerBasePtr informer(
+        new InformerBase(createOutConnectors(config), scope, config, dataType));
+    informer->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
+    this->signalParticipantCreated(informer);
+    return informer;
 }
 
 
 ListenerPtr Factory::createListener(const Scope& scope,
         const ParticipantConfig& config) {
-    return ListenerPtr(new Listener(createInPushConnectors(config), scope, config));
+    ListenerPtr listener(
+        new Listener(createInPushConnectors(config), scope, config));
+    listener->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
+    this->signalParticipantCreated(listener);
+    return listener;
 }
 
 ReaderPtr Factory::createReader(const Scope& scope,
                                 const ParticipantConfig& config) {
-    return ReaderPtr(new Reader(createInPullConnectors(config), scope, config));
+    ReaderPtr reader(
+        new Reader(createInPullConnectors(config), scope, config));
+    reader->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
+    this->signalParticipantCreated(reader);
+    return reader;
 }
 
 patterns::LocalServerPtr Factory::createLocalServer(const Scope& scope,
-                                                    const ParticipantConfig &listenerConfig,
-                                                    const ParticipantConfig &informerConfig) {
-    return patterns::LocalServerPtr(
-            new patterns::LocalServer(scope, listenerConfig, informerConfig));
+        const ParticipantConfig &listenerConfig,
+        const ParticipantConfig &informerConfig) {
+    patterns::LocalServerPtr server(
+        new patterns::LocalServer(scope, listenerConfig, informerConfig));
+    server->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
+    this->signalParticipantCreated(server);
+    return server;
 }
 
 patterns::ServerPtr Factory::createServer(const Scope& scope,
@@ -288,8 +311,11 @@ patterns::ServerPtr Factory::createServer(const Scope& scope,
 patterns::RemoteServerPtr Factory::createRemoteServer(const Scope& scope,
         const ParticipantConfig &listenerConfig,
         const ParticipantConfig &informerConfig) {
-    return patterns::RemoteServerPtr(
-            new patterns::RemoteServer(scope, listenerConfig, informerConfig));
+    patterns::RemoteServerPtr server(
+        new patterns::RemoteServer(scope, listenerConfig, informerConfig));
+    server->setSignalParticipantDestroyed(&this->signalParticipantDestroyed); // TODO what could possibly go wrong? more instances above
+    this->signalParticipantCreated(server);
+    return server;
 }
 
 ParticipantConfig Factory::getDefaultParticipantConfig() const {

@@ -30,6 +30,9 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+
+#include <boost/signal.hpp>
+
 #include <boost/thread/recursive_mutex.hpp>
 
 #include <rsc/misc/langutils.h>
@@ -53,6 +56,8 @@
 #include "patterns/RemoteServer.h"
 
 namespace rsb {
+
+typedef boost::signal1<void, ParticipantPtr> SignalParticipantCreated;
 
 class Factory;
 
@@ -80,6 +85,10 @@ public:
 
     virtual ~Factory();
 
+    SignalParticipantCreated& getSignalParticipantCreated();
+
+    SignalParticipantDestroyed& getSignalParticipantDestroyed();
+
     /**
      * Creates and returns a new @ref Informer that publishes @ref
      * Event s under the @ref Scope @a scope.
@@ -101,8 +110,12 @@ public:
                    = getFactory().getDefaultParticipantConfig(),
                    const std::string& dataType
                    = detail::TypeName<DataType>()()) {
-        return typename Informer<DataType>::Ptr(new Informer<DataType> (
-            createOutConnectors(config), scope, config, dataType));
+        typename Informer<DataType>::Ptr informer(
+            new Informer<DataType>(createOutConnectors(config), scope,
+                                   config, dataType));
+        informer->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
+        this->signalParticipantCreated(informer);
+        return informer;
     }
 
     /**
@@ -247,6 +260,9 @@ private:
      */
     ParticipantConfig defaultConfig;
     mutable boost::recursive_mutex configMutex;
+
+    SignalParticipantCreated signalParticipantCreated;
+    SignalParticipantDestroyed signalParticipantDestroyed;
 
     std::vector<transport::OutConnectorPtr>
         createOutConnectors(const ParticipantConfig& config);
