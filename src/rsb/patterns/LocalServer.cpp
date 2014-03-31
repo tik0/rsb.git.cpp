@@ -164,7 +164,7 @@ void LocalServer::registerMethod(const std::string& name, CallbackPtr callback) 
 
     method->setSignalParticipantDestroyed
         (&getFactory().getSignalParticipantDestroyed()); // TODO asking for trouble
-    getFactory().getSignalParticipantCreated()(method);
+    getFactory().getSignalParticipantCreated()(method, shared_from_this());
 
     method->activate();
 

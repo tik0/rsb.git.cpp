@@ -265,56 +265,62 @@ SignalParticipantDestroyed& Factory::getSignalParticipantDestroyed() {
 
 InformerBasePtr Factory::createInformerBase(const Scope&             scope,
                                             const string&            dataType,
-                                            const ParticipantConfig& config) {
+                                            const ParticipantConfig& config,
+                                            ParticipantPtr           parent) {
     InformerBasePtr informer(
         new InformerBase(createOutConnectors(config), scope, config, dataType));
     informer->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
-    this->signalParticipantCreated(informer);
+    this->signalParticipantCreated(informer, parent);
     return informer;
 }
 
 
-ListenerPtr Factory::createListener(const Scope& scope,
-        const ParticipantConfig& config) {
+ListenerPtr Factory::createListener(const Scope&             scope,
+                                    const ParticipantConfig& config,
+                                    ParticipantPtr           parent) {
     ListenerPtr listener(
         new Listener(createInPushConnectors(config), scope, config));
     listener->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
-    this->signalParticipantCreated(listener);
+    this->signalParticipantCreated(listener, parent);
     return listener;
 }
 
-ReaderPtr Factory::createReader(const Scope& scope,
-                                const ParticipantConfig& config) {
+ReaderPtr Factory::createReader(const Scope&             scope,
+                                const ParticipantConfig& config,
+                                ParticipantPtr           parent) {
     ReaderPtr reader(
         new Reader(createInPullConnectors(config), scope, config));
     reader->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
-    this->signalParticipantCreated(reader);
+    this->signalParticipantCreated(reader, parent);
     return reader;
 }
 
-patterns::LocalServerPtr Factory::createLocalServer(const Scope& scope,
-        const ParticipantConfig &listenerConfig,
-        const ParticipantConfig &informerConfig) {
+patterns::LocalServerPtr Factory::createLocalServer(const Scope&             scope,
+                                                    const ParticipantConfig& listenerConfig,
+                                                    const ParticipantConfig& informerConfig,
+                                                    ParticipantPtr           parent) {
     patterns::LocalServerPtr server(
         new patterns::LocalServer(scope, listenerConfig, informerConfig));
     server->setSignalParticipantDestroyed(&this->signalParticipantDestroyed);
-    this->signalParticipantCreated(server);
+    this->signalParticipantCreated(server, parent);
     return server;
 }
 
-patterns::ServerPtr Factory::createServer(const Scope& scope,
-                                          const ParticipantConfig &listenerConfig,
-                                          const ParticipantConfig &informerConfig) {
-    return createLocalServer(scope, listenerConfig, informerConfig);
+patterns::ServerPtr Factory::createServer(const Scope&             scope,
+                                          const ParticipantConfig& listenerConfig,
+                                          const ParticipantConfig& informerConfig,
+                                          ParticipantPtr           parent) {
+    return createLocalServer(scope, listenerConfig, informerConfig, parent);
 } // TODO deprecated; remove
 
-patterns::RemoteServerPtr Factory::createRemoteServer(const Scope& scope,
-        const ParticipantConfig &listenerConfig,
-        const ParticipantConfig &informerConfig) {
+patterns::RemoteServerPtr Factory::createRemoteServer(const Scope&             scope,
+                                                      const ParticipantConfig& listenerConfig,
+                                                      const ParticipantConfig& informerConfig,
+                                                      ParticipantPtr           parent) {
     patterns::RemoteServerPtr server(
         new patterns::RemoteServer(scope, listenerConfig, informerConfig));
     server->setSignalParticipantDestroyed(&this->signalParticipantDestroyed); // TODO what could possibly go wrong? more instances above
-    this->signalParticipantCreated(server);
+    this->signalParticipantCreated(server, parent);
     return server;
 }
 
