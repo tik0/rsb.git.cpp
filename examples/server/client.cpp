@@ -3,7 +3,7 @@
  * This file is a part of RSB project
  *
  * Copyright (C) 2010 by Johannes Wienke <jwienke at techfak dot uni-bielefeld dot de>
- * Copyright (C) 2011, 2012, 2013 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
+ * Copyright (C) 2011, 2012, 2013, 2014 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
  *
  * This file may be licensed under the terms of the
  * GNU Lesser General Public License Version 3 (the ``LGPL''),
@@ -34,22 +34,26 @@ using namespace rsb;
 using namespace rsb::patterns;
 
 int main(int /*argc*/, char** /*argv*/) {
-    // Use the RSB factory to create a RemoteServer instance for the
-    // server at scope /example/server.
-    Factory& factory = getFactory();
-    RemoteServerPtr remoteServer
-        = factory.createRemoteServer("/example/server");
+    try {
+        // Use the RSB factory to create a RemoteServer instance for the
+        // server at scope /example/server.
+        Factory& factory = getFactory();
+        RemoteServerPtr remoteServer
+            = factory.createRemoteServer("/example/server");
 
-    // Call the method "echo", passing it a string value as argument
-    // and accepting a string value as result. Note that the types of
-    // arguments and return values are defined by the server providing
-    // the respective methods and have to be matched in method calls.
-    boost::shared_ptr<std::string> request(new std::string("bla"));
-    boost::shared_ptr<std::string> result
-        = remoteServer->call<std::string>("echo", request);
-    std::cout << "Server replied: " << *result << std::endl;
+        // Call the method "echo", passing it a string value as argument
+        // and accepting a string value as result. Note that the types of
+        // arguments and return values are defined by the server providing
+        // the respective methods and have to be matched in method calls.
+        boost::shared_ptr<std::string> request(new std::string("bla"));
+        boost::shared_ptr<std::string> result
+            = remoteServer->call<std::string>("echo", request);
+        std::cout << "Server replied: " << *result << std::endl;
 
-    remoteServer->call<void>("void");
+        remoteServer->call<void>("void");
+    } catch (const std::exception& e) {
+        std::cerr << "Uncaught exception: " << e.what() << std::endl;
+    }
 
     return EXIT_SUCCESS;
 }

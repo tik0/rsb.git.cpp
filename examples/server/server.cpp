@@ -58,7 +58,11 @@ int main(int /*argc*/, char** /*argv*/) {
     server->registerMethod("void", LocalServer::CallbackPtr(new VoidVoidCallback()));
 
     // Wait here so incoming method calls can be processed.
-    boost::this_thread::sleep(boost::posix_time::seconds(1000));
+    boost::this_thread::sleep(boost::posix_time::seconds(10));
+
+    server.reset();
+
+    boost::this_thread::sleep(boost::posix_time::seconds(30));
 
     return EXIT_SUCCESS;
 }
