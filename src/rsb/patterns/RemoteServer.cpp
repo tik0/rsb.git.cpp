@@ -84,7 +84,7 @@ RemoteServer::FuturePtr RemoteServer::RemoteMethod::call(const std::string& /*me
         request->setMethod("REQUEST");
         getInformer()->publish(request);
 
-        this->inprogress.insert(std::make_pair(request->getEventId(), result));
+        this->inprogress.insert(std::make_pair(request->getId(), result));
     }
 
     return result;
@@ -149,11 +149,15 @@ std::string RemoteServer::getKind() const {
     return "remote-server";
 }
 
+const std::set<std::string> RemoteServer::getTransportURLs() const {
+    return std::set<std::string>();
+}
+
 RemoteServer::RemoteMethodPtr RemoteServer::getMethod(const string& name) {
 
     boost::mutex::scoped_lock lock(this->methodsMutex);
 
-    if (!this->methods.count(name)) {
+    if (this->methods.find(name) == this->methods.end()) {
         RemoteMethodPtr method
             = getFactory().createRemoteMethod(getScope()->concat(Scope("/" + name)),
                                               this->listenerConfig,

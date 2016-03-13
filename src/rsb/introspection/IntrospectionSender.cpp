@@ -2,7 +2,7 @@
  *
  * This file is part of the RSB project
  *
- * Copyright (C) 2014 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
+ * Copyright (C) 2014, 2015 Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
  *
  * This file may be licensed under the terms of the
  * GNU Lesser General Public License Version 3 (the ``LGPL''),
@@ -119,13 +119,14 @@ struct QueryHandler : public Handler {
 // @author jmoringe
 struct EchoCallback : public patterns::LocalServer::EventCallback {
     EventPtr call(const std::string& /*methodName*/, EventPtr request) {
-        request->mutableMetaData()
-            .setUserTime("request.send",
-                         request->getMetaData().getSendTime());
-        request->mutableMetaData()
-            .setUserTime("request.receive",
-                         request->getMetaData().getReceiveTime());
-        return request;
+        EventPtr reply(new Event(request->getScope(),
+                                 request->getData(),
+                                 request->getType()));
+        reply->mutableMetaData().setUserTime("request.send",
+                                             request->getMetaData().getSendTime());
+        reply->mutableMetaData().setUserTime("request.receive",
+                                             request->getMetaData().getReceiveTime());
+        return reply;
     }
 };
 
@@ -156,7 +157,8 @@ void IntrospectionSender::addParticipant(ParticipantPtr participant,
                          participant->getId(),
                          (parent ? parent->getId() : rsc::misc::UUID(false)),
                          *participant->getScope(),
-                         "TODO"); // TODO type
+                         "TODO", // TODO type
+                         participant->getTransportURLs());
     this->participants.push_back(info);
 
     sendHello(info);
@@ -205,6 +207,11 @@ void IntrospectionSender::sendHello(const ParticipantInfo& participant,
     }
     hello->set_kind(participant.getKind());
     hello->set_scope(participant.getScope().toString());
+    for (std::set<std::string>::const_iterator it
+             = participant.getTransportURLs().begin();
+         it != participant.getTransportURLs().end(); ++it) {
+        hello->add_transport(*it);
+    }
 
     // Add process information.
     rsb::protocol::operatingsystem::Process* process
@@ -252,7 +259,7 @@ void IntrospectionSender::sendHello(const ParticipantInfo& participant,
     helloEvent->setData(hello);
     helloEvent->setType(rsc::runtime::typeName(*hello.get()));
     if (query) {
-        helloEvent->addCause(query->getEventId());
+        helloEvent->addCause(query->getId());
     }
 
     this->informer->publish(helloEvent);

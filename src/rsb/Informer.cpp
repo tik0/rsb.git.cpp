@@ -66,6 +66,11 @@ std::string InformerBase::getKind() const {
     return "informer";
 }
 
+const std::set<std::string> InformerBase::getTransportURLs() const {
+    return this->configurator->getTransportURLs();
+}
+
+
 string InformerBase::getType() const {
     return this->defaultType;
 }
@@ -130,7 +135,7 @@ void InformerBase::checkedPublish(EventPtr event) {
 }
 
 void InformerBase::uncheckedPublish(EventPtr event) {
-    event->setEventId(getId(), nextSequenceNumber());
+    event->setId(getId(), nextSequenceNumber());
     configurator->publish(event);
 }
 
