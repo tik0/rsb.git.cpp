@@ -82,6 +82,8 @@ SET(SOURCES rsb/CommException.cpp
             rsb/filter/MethodFilter.cpp
             rsb/filter/TypeFilter.cpp
             rsb/filter/CauseFilter.cpp
+            rsb/filter/WireSchemaFilter.cpp
+            rsb/filter/FilterCombination.cpp
 
             rsb/patterns/MethodExistsException.cpp
             rsb/patterns/Server.cpp
@@ -179,6 +181,8 @@ SET(HEADERS rsb/CommException.h
             rsb/filter/MethodFilter.h
             rsb/filter/TypeFilter.h
             rsb/filter/CauseFilter.h
+            rsb/filter/WireSchemaFilter.h
+            rsb/filter/FilterCombination.h
 
             rsb/patterns/MethodExistsException.h
             rsb/patterns/Server.h

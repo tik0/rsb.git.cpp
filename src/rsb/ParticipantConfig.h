@@ -37,6 +37,7 @@
 #include <rsc/config/OptionHandler.h>
 #include <rsc/runtime/Properties.h>
 #include <rsc/runtime/Printable.h>
+#include <rsc/misc/uri.h>
 
 #include "QualityOfServiceSpec.h"
 #include "rsb/rsbexports.h"
@@ -73,6 +74,9 @@ public:
             public rsc::config::OptionHandler,
             public rsc::runtime::Printable {
     public:
+        /**
+         * The set of preferred converters lists (wire-schema, data-type) pairs.
+         */
         typedef std::set<std::pair<std::string, std::string> > ConverterNames;
 
         /**
@@ -94,7 +98,21 @@ public:
          */
         std::string getName() const;
 
+        /**
+         * Return the set of preferred converters.
+         * This list is typically initialized from options. See @a handleOption().
+         */
         ConverterNames getConverters() const;
+
+        /**
+         * add a preferred converter
+         */
+        void addConverter(const std::string &wireschema, const std::string &datatype);
+
+        /**
+         * add preferred converters
+         */
+        void addConverters(const ConverterNames& converters);
 
         /**
          * Returns the specified options for the transport.
@@ -129,6 +147,12 @@ public:
 
         void handleOption(const std::vector<std::string>& key,
                 const std::string& value);
+
+        /**
+         * Merge in options from uri: host, port, and query's key=value pairs.
+         */
+        void mergeOptions (const rsc::misc::uri& uri);
+
     private:
         std::string name;
         ConverterNames converters;
@@ -312,6 +336,28 @@ public:
      */
     void setTransports(const std::set<Transport>& transports);
 
+    /**
+     * Configures existing or new transport from uri.
+     *
+     * If transport is not specified (empty uri scheme), configure
+     * all existing transports with the provided options.
+     *
+     * @param uri uri instance describing transport.
+     * @param disableOthers decides whether all other existing transports (except the requested one) should be disabled, i.e. turning addTransport into setTransport.
+     */
+    void addTransport (const rsc::misc::uri& uri, bool disableOthers=false);
+
+    /**
+     * Configures the set of transports according to the given set of uris.
+     *
+     * An empty uri scheme is not allowed and throws an invalid_argument exception.
+     * Override existing transport configurations with specified values.
+     * Removes all other existing transports.
+     *
+     * @param uris set of uri instances describing the desired transport parameters.
+     */
+    void setTransports (const std::set<rsc::misc::uri>& uris);
+
     const EventProcessingStrategy& getEventReceivingStrategy() const;
 
     EventProcessingStrategy& mutableEventReceivingStrategy();
@@ -358,6 +404,14 @@ public:
      * @param options new options replacing all old ones
      */
     void setOptions(const rsc::runtime::Properties& options);
+
+    /**
+     * Adds converters to the list of preferred converters for all currently
+     * configurred transports.
+     * @param converters: set of (wire-schema, data-type) pairs (as strings).
+     */
+    void addPreferredConverters (const Transport::ConverterNames &converters);
+
 private:
     rsc::logging::LoggerPtr logger;
 

@@ -68,6 +68,16 @@ ParticipantConfig::Transport::ConverterNames ParticipantConfig::Transport::getCo
     return this->converters;
 }
 
+void ParticipantConfig::Transport::addConverter(const string &wireschema, const string &datatype)
+{
+    this->converters.insert(make_pair(wireschema, datatype));
+}
+
+void ParticipantConfig::Transport::addConverters(const ParticipantConfig::Transport::ConverterNames &converters)
+{
+    this->converters.insert(converters.begin(), converters.end());
+}
+
 rsc::runtime::Properties ParticipantConfig::Transport::getOptions() const {
     return this->options;
 }
@@ -103,7 +113,7 @@ void ParticipantConfig::Transport::handleOption(const vector<string>& key,
                                     "Option key `%1%' has invalid number of components; converter-related keys for transports has to have three components")
                                     % key));
         }
-        this->converters.insert(make_pair(key[2], value));
+        this->addConverter(key[2], value);
     } else if ((key.size() >= 2) && (key[0] == "converter")) {
         // ignore converters for other languages
     } else {
@@ -115,6 +125,14 @@ void ParticipantConfig::Transport::handleOption(const vector<string>& key,
                                     % key));
         }
         this->options[key[0]] = value;
+    }
+}
+
+void ParticipantConfig::Transport::mergeOptions(const rsc::misc::uri& uri) {
+    assert(uri.scheme().empty() || uri.scheme() == this->getName());
+    for (rsc::runtime::Properties::const_iterator 
+             it=uri.query.begin(), end=uri.query.end(); it!=end; ++it) {
+        this->options[it->first] = it->second;
     }
 }
 
@@ -254,6 +272,56 @@ void ParticipantConfig::setTransports(const set<Transport>& transports) {
     }
 }
 
+void ParticipantConfig::addTransport (const rsc::misc::uri& uri,
+                                      bool disableOthers) {
+    if (!uri.scheme().empty()) {
+        // a concrete transport was specified
+        if (disableOthers) {
+            for (map<string, Transport>::iterator
+                     it = this->transports.begin(), end = this->transports.end();
+                 it != end; ++it) {
+                it->second.setEnabled(false);
+            }
+        }
+
+        Transport& t = (*(this->transports.insert(
+                              make_pair(uri.scheme(), Transport(uri.scheme(), true))).first)).second;
+        t.mergeOptions (uri); // merge in uri parameters
+    } else {
+        if (uri.query.has("host") || uri.query.has("port"))
+            throw std::invalid_argument("invalid transport spec: "
+                                        "host or port options given, but no transport specified");
+
+        // uri scheme = transport is empty: configure all existing transports
+        for (std::map<std::string, Transport>::iterator
+                 it=this->transports.begin(), end=this->transports.end(); it!=end; ++it) {
+            it->second.mergeOptions(uri);
+        }
+    }
+}
+
+void ParticipantConfig::setTransports (const std::set<rsc::misc::uri>& uris) {
+    // check for empty uri schemes = undefined transports first
+    for (std::set<rsc::misc::uri>::const_iterator it=uris.begin(), end=uris.end();
+         it != end; ++it) {
+        if (it->scheme().empty()) throw std::invalid_argument("undefined transport scheme in set");
+    }
+
+    std::map<std::string, Transport> transports;
+    for (std::set<rsc::misc::uri>::const_iterator it=uris.begin(), end=uris.end();
+         it != end; ++it) {
+        // fetch existing or create new, empty transport
+        std::map<std::string, Transport>::iterator entry =
+            this->transports.insert(
+                make_pair(it->scheme(), Transport(it->scheme(), true))).first;
+        Transport& t = entry->second;
+        t.mergeOptions (*it); // merge in uri parameters
+        t.setEnabled(true);
+        transports.insert (*entry);
+    }
+    this->transports.swap(transports); // replace set
+}
+
 const ParticipantConfig::EventProcessingStrategy& ParticipantConfig::getEventReceivingStrategy() const {
     return this->eventReceivingStrategy;
 }
@@ -285,6 +353,15 @@ rsc::runtime::Properties& ParticipantConfig::mutableOptions() {
 
 void ParticipantConfig::setOptions(const Properties& options) {
     this->options = options;
+}
+
+void ParticipantConfig::addPreferredConverters(const ParticipantConfig::Transport::ConverterNames &converters)
+{
+    for (map<string, Transport>::iterator
+         it = this->transports.begin(), end = this->transports.end();
+         it != end; ++it) {
+        it->second.addConverters(converters);
+    }
 }
 
 void ParticipantConfig::handleOption(const vector<string>& key,
